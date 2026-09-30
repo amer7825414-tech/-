@@ -2,11 +2,13 @@ import express from 'express';
 import multer from 'multer';
 import fs from 'node:fs';
 import path from 'node:path';
+import os from 'node:os';
 
 const app = express();
-const PORT = process.env.PORT || 10000;
+const PORT = process.env.PORT || 3000;
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
-const DATA = path.resolve('data');
+// Vercel's deployed filesystem is read-only. /tmp is writable but temporary.
+const DATA = path.join(os.tmpdir(), 'cam-geo-data');
 const PUBLIC = path.resolve('public');
 fs.mkdirSync(DATA, { recursive: true });
 
@@ -80,4 +82,10 @@ app.get('/admin/images/:name', requireAdmin, (req, res) => {
   res.sendFile(file);
 });
 
-app.listen(PORT, () => console.log(`Listening on ${PORT}`));
+// Vercel handles the server process. Listen only when running locally.
+if (!process.env.VERCEL) {
+  app.listen(PORT, () => console.log(`Listening on ${PORT}`));
+}
+
+export default app;
+
