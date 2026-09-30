@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>لوحة الإدارة</title>
+<style>
+body{margin:0;font-family:system-ui,Tahoma,Arial;background:#0b1020;color:#eef2ff}.wrap{max-width:1100px;margin:auto;padding:20px}.card{background:#121a30;border:1px solid #293657;border-radius:18px;padding:18px;margin-bottom:16px}button{padding:10px 14px;border-radius:10px;border:1px solid #3a527c;background:#1b3557;color:white;font-weight:700}.muted{color:#aebbd2}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:15px}pre{background:#08101e;padding:12px;border-radius:12px;white-space:pre-wrap;word-break:break-word}img{max-width:100%;border-radius:12px;background:#070b12}.record{border-top:1px solid #2a3550;padding-top:15px;margin-top:15px}.pill{display:inline-block;background:#243252;padding:4px 8px;border-radius:999px;margin:3px;font-size:12px}.warn{color:#ffd27a}
+</style></head>
+<body><div class="wrap">
+<div class="card"><h1>لوحة الإدارة</h1><p class="muted">هذه اللوحة تعرض فقط البيانات التي أرسلها الزوار بعد موافقتهم.</p><button onclick="loadRecords()">تحديث</button><span id="status" class="muted"></span></div>
+<div id="records"></div>
+</div>
+<script>
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+async function loadRecords(){
+ const st=document.getElementById('status'); st.textContent=' جارٍ التحميل…';
+ try{
+  const r=await fetch('/api/admin/records'); const j=await r.json(); if(!r.ok||!j.ok) throw new Error(j.error||'فشل');
+  const box=document.getElementById('records');
+  if(!j.records.length){box.innerHTML='<div class="card muted">لا توجد سجلات بعد.</div>';return}
+  box.innerHTML=j.records.map((x,i)=>{
+   const img=x.imageFile?`<div><h3>الصورة</h3><img src="/admin/images/${encodeURIComponent(x.imageFile)}" loading="lazy"></div>`:'';
+   const geo=x.location?JSON.stringify(x.location,null,2):'لم يرسل موقعًا.';
+   return `<div class="card record"><h2>سجل #${i+1}</h2><span class="pill">${esc(x.receivedAt)}</span><span class="pill">موافقة: نعم</span><div class="grid"><div><h3>الموقع</h3><pre>${esc(geo)}</pre><h3>الجهاز والمتصفح</h3><pre>${esc(JSON.stringify(x.visitor,null,2))}</pre></div><div>${img||'<p class="muted">لا توجد صورة.</p>'}</div></div></div>`
+  }).join(''); st.textContent=` تم تحميل ${j.records.length} سجل.`;
+ }catch(e){document.getElementById('records').innerHTML='<div class="card warn">تعذر تحميل السجلات: '+esc(e.message)+'</div>';st.textContent='';}
+}
+loadRecords();
+</script></body></html>
